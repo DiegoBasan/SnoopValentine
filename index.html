@@ -565,8 +565,6 @@
         }
 
         // ========== MOSTRAR CARTA ==========
-        let autoCloseTimer = null; // Variable global para el timer
-
         function mostrarCarta(numero) {
             game.modalAbierto = true;
             const modal = document.getElementById('modalCarta');
@@ -574,22 +572,14 @@
             img.src = `images/carta${numero}.png`;
             modal.classList.add('active');
         
-            // Auto-cerrar después de 15 segundos
-            if (autoCloseTimer) clearTimeout(autoCloseTimer);
-            autoCloseTimer = setTimeout(() => {
-                modal.classList.remove('active');
-                game.modalAbierto = false;
-                autoCloseTimer = null;
-            }, 15000); // 15000 ms = 15 segundos
-        
             if (numero === 4) {
                 setTimeout(() => {
-                    if (autoCloseTimer) clearTimeout(autoCloseTimer);
                     modal.classList.remove('active');
                     mostrarGanaste();
                 }, 100);
             }
         }
+
 
 
         // ========== MOSTRAR GANASTE ==========
