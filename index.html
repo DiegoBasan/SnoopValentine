@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snoopy Valentine Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: #2a2a2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+
+        /* ========== CONSOLA ========== */
+        .console {
+            width: 700px;
+            height: 1100px;
+            background: #D9494A;
+            border-radius: 40px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        /* ========== PANTALLA ========== */
+        .screen-container {
+            width: 600px;
+            height: 560px;
+            background: #71171E;
+            border-radius: 20px;
+            padding: 9px;
+        }
+
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #342327;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* DESPUÉS */
+        .game-world {
+            position: absolute;
+            width: 1820px;
+            height: 1620px;
+            transition: transform 0.1s linear;
+            background-image: url('images/fondo.png');
+            background-size: 1820px 1620px;
+            background-repeat: no-repeat;
+        }
+
+        /* ========== SPRITES ========== */
+        .sprite {
+            position: absolute;
+            background-size: contain;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .snoopy {
+            width: 65px;
+            height: 80px;
+            z-index: 100;
+        }
+
+        .casa {
+            width: 428px;
+            height: 235px;
+            z-index: 50;
+        }
+
+        .carta {
+            width: 65px;
+            height: 35px;
+            z-index: 10;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .woodstock {
+            width: 50px;
+            height: 50px;
+            z-index: 99;
+        }
+
+        /* ========== MODALES ========== */
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: rgba(0,0,0,0.9);
+            padding: 20px;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal img {
+            max-width: 388px;
+            display: block;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            cursor: pointer;
+            max-width: 180px;
+        }
+
+        /* ========== CONTROLES ========== */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 600px;
+            align-items: center;
+        }
+
+        /* D-Pad */
+        .dpad {
+            position: relative;
+            width: 300px;
+            height: 225px;
+        }
+
+        .dpad-btn {
+            position: absolute;
+            width: 100px;
+            height: 75px;
+            background: #71171E;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .dpad-btn:active {
+            transform: scale(0.95);
+            background: #5a1218;
+        }
+
+        .dpad-up { top: 0; left: 100px; }
+        .dpad-down { bottom: 0; left: 100px; }
+        .dpad-left { top: 75px; left: 0; }
+        .dpad-right { top: 75px; right: 0; }
+        .dpad-center { top: 75px; left: 100px; background: #5a1218; cursor: default; }
+
+        .dpad-up::before { content: '▲'; }
+        .dpad-down::before { content: '▼'; }
+        .dpad-left::before { content: '◄'; }
+        .dpad-right::before { content: '►'; }
+
+        /* Botones A y B */
+        .action-buttons {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .action-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #71171E;
+            border: none;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+            background: #5a1218;
+        }
+
+        /* Botón Reset */
+        .reset-btn {
+            width: 100px;
+            height: 35px;
+            background: #71171E;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.1s;
+        }
+
+        .reset-btn:active {
+            transform: scale(0.95);
+            background: #5a1218;
+        }
+
+        /* Instrucción */
+        .hint {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="console">
+        <!-- PANTALLA -->
+        <div class="screen-container">
+            <div class="screen">
+                <div class="game-world" id="gameWorld">
+                    <!-- Sprites se generan dinámicamente -->
+                </div>
+                
+                <!-- Modal Inicial (Valentine) -->
+                <div class="modal active" id="modalInicial">
+                    <img src="valen.png" alt="Will you be my valentine?" style="max-width: 388px;">
+                    <div class="modal-buttons">
+                        <img src="si.png" class="modal-btn" id="btnSi" style="cursor: pointer;">
+                        <img src="no.png" class="modal-btn" id="btnNo" style="cursor: pointer;">
+                    </div>
+                </div>
+
+                <!-- Modal Cartas -->
+                <div class="modal" id="modalCarta">
+                    <img id="cartaImg" src="" alt="Carta">
+                    <p style="color: white; text-align: center; margin-top: 15px;">Presiona B para continuar</p>
+                </div>
+
+                <!-- Modal Ganaste -->
+                <div class="modal" id="modalGanaste">
+                    <img src="bonus.png" alt="¡Ganaste!">
+                    <p style="color: white; text-align: center; margin-top: 15px;">Presiona B para continuar</p>
+                </div>
+
+                <div class="hint">Presiona A para correr</div>
+            </div>
+        </div>
+
+        <!-- CONTROLES -->
+        <div class="controls">
+            <!-- D-Pad -->
+            <div class="dpad">
+                <button class="dpad-btn dpad-up" id="upBtn"></button>
+                <button class="dpad-btn dpad-down" id="downBtn"></button>
+                <button class="dpad-btn dpad-left" id="leftBtn"></button>
+                <button class="dpad-btn dpad-right" id="rightBtn"></button>
+                <div class="dpad-btn dpad-center"></div>
+            </div>
+
+            <!-- Botones A y B -->
+            <div class="action-buttons">
+                <button class="action-btn" id="bBtn">B</button>
+                <button class="action-btn" id="aBtn">A</button>
+            </div>
+        </div>
+
+        <!-- Botón Reset -->
+        <button class="reset-btn" id="resetBtn">RESET</button>
+    </div>
+
+    <script>
+        const gameWorld = document.getElementById('gameWorld');
+        const SCREEN_WIDTH = 582;
+        const SCREEN_HEIGHT = 542;
+        const WORLD_WIDTH = 1820;
+        const WORLD_HEIGHT = 1620;
+
+        // Estado del juego
+        const game = {
+            started: false,
+            cartasEncontradas: 0,
+            cartasTotal: 4,
+            modalAbierto: true,
+            woodstockActive: false
+        };
+
+        // Jugador
+        const player = {
+            x: WORLD_WIDTH / 2,
+            y: WORLD_HEIGHT / 2,
+            direction: 'front',
+            element: null,
+            walkFrame: 1,
+            frameCounter: 0
+        };
+
+        // Woodstock
+        const woodstock = {
+            x: 0,
+            y: 0,
+            element: null,
+            active: false
+        };
+
+        // Controles
+        const keys = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            a: false,
+            b: false
+        };
+
+        // Posiciones fijas
+        const casaPos = { x: WORLD_WIDTH / 2 - 214, y: 200 }; // Casa más arriba
+        const cartasPos = [
+            { x: 300, y: 400 },   // Carta esquina superior izquierda
+            { x: 1400, y: 500 },  // Carta esquina superior derecha
+            { x: 400, y: 1200 },  // Carta esquina inferior izquierda
+            { x: 1300, y: 1300 }  // Carta esquina inferior derecha
+        ];
+
+        const cartas = [];
+
+        // ========== INICIALIZAR JUEGO ==========
+        function init() {
+            // Crear Snoopy
+            player.element = createSprite('snoopy', player.x, player.y, 65, 80, 'front1.png');
+            
+            // Crear Casa (con colisión)
+            createSprite('casa', casaPos.x, casaPos.y, 428, 235, 'casa.png');
+
+            // Crear Cartas
+            cartasPos.forEach((pos, i) => {
+                const carta = createSprite('carta', pos.x, pos.y, 65, 35, 'carta.png');
+                cartas.push({ element: carta, encontrada: false, index: i });
+            });
+
+            updateCamera();
+            setupControls();
+        }
+
+        // ========== CREAR SPRITE ==========
+        function createSprite(className, x, y, width, height, imageSrc) {
+            const sprite = document.createElement('div');
+            sprite.className = `sprite ${className}`;
+            sprite.style.left = x + 'px';
+            sprite.style.top = y + 'px';
+            sprite.style.width = width + 'px';
+            sprite.style.height = height + 'px';
+            sprite.style.backgroundImage = `url('${imageSrc}')`;
+            gameWorld.appendChild(sprite);
+            return sprite;
+        }
+
+        // ========== ACTUALIZAR CÁMARA ==========
+        function updateCamera() {
+            const offsetX = SCREEN_WIDTH / 2 - 32.5; // Centro de Snoopy
+            const offsetY = SCREEN_HEIGHT / 2 - 40;
+            
+            let camX = -(player.x - offsetX);
+            let camY = -(player.y - offsetY);
+
+            // Límites de la cámara
+            camX = Math.min(0, Math.max(camX, -(WORLD_WIDTH - SCREEN_WIDTH)));
+            camY = Math.min(0, Math.max(camY, -(WORLD_HEIGHT - SCREEN_HEIGHT)));
+
+            gameWorld.style.transform = `translate(${camX}px, ${camY}px)`;
+        }
+
+        // ========== COLISIÓN CON CASA ==========
+        function checkCollisionWithHouse(nextX, nextY) {
+            const playerBox = {
+                x: nextX,
+                y: nextY,
+                width: 65,
+                height: 80
+            };
+
+            const houseBox = {
+                x: casaPos.x,
+                y: casaPos.y,
+                width: 428,
+                height: 235
+            };
+
+            return (
+                playerBox.x < houseBox.x + houseBox.width &&
+                playerBox.x + playerBox.width > houseBox.x &&
+                playerBox.y < houseBox.y + houseBox.height &&
+                playerBox.y + playerBox.height > houseBox.y
+            );
+        }
+
+        // ========== VERIFICAR CARTAS ==========
+        function checkCartas() {
+            cartas.forEach(carta => {
+                if (carta.encontrada) return;
+
+                const dx = Math.abs(player.x - (parseInt(carta.element.style.left)));
+                const dy = Math.abs(player.y - (parseInt(carta.element.style.top)));
+
+                if (dx < 50 && dy < 50) {
+                    carta.encontrada = true;
+                    carta.element.remove();
+                    game.cartasEncontradas++;
+                    
+                    // Mostrar carta
+                    mostrarCarta(game.cartasEncontradas);
+                }
+            });
+        }
+
+        // ========== MOSTRAR CARTA ==========
+        function mostrarCarta(numero) {
+            game.modalAbierto = true;
+            const modal = document.getElementById('modalCarta');
+            const img = document.getElementById('cartaImg');
+            img.src = `carta${numero}.png`;
+            modal.classList.add('active');
+
+            if (numero === 4) {
+                // Última carta encontrada
+                setTimeout(() => {
+                    modal.classList.remove('active');
+                    mostrarGanaste();
+                }, 100);
+            }
+        }
+
+        // ========== MOSTRAR GANASTE ==========
+        function mostrarGanaste() {
+            const modal = document.getElementById('modalGanaste');
+            modal.classList.add('active');
+            game.modalAbierto = true;
+
+            // Spawn Woodstock encima de la casa
+            woodstock.x = casaPos.x + 214 - 25; // Centro de la casa
+            woodstock.y = casaPos.y - 60; // Encima
+            woodstock.element = createSprite('woodstock', woodstock.x, woodstock.y, 50, 50, 'woodstock.png');
+            woodstock.active = true;
+        }
+
+        // ========== LOOP PRINCIPAL ==========
+        function update() {
+            if (!game.started || game.modalAbierto) {
+                requestAnimationFrame(update);
+                return;
+            }
+
+            let nextX = player.x;
+            let nextY = player.y;
+            let moved = false;
+            const speed = keys.a ? 12 : 6; // Velocidad normal y corriendo
+
+            // Movimiento
+            if (keys.up) {
+                nextY -= speed;
+                player.direction = 'back';
+                moved = true;
+            }
+            if (keys.down) {
+                nextY += speed;
+                player.direction = 'front';
+                moved = true;
+            }
+            if (keys.left) {
+                nextX -= speed;
+                player.direction = 'left';
+                moved = true;
+            }
+            if (keys.right) {
+                nextX += speed;
+                player.direction = 'right';
+                moved = true;
+            }
+
+            // Límites del mundo
+            nextX = Math.max(0, Math.min(WORLD_WIDTH - 65, nextX));
+            nextY = Math.max(0, Math.min(WORLD_HEIGHT - 80, nextY));
+
+            // Colisión con casa
+            if (!checkCollisionWithHouse(nextX, nextY)) {
+                player.x = nextX;
+                player.y = nextY;
+
+                // Animar sprite (alternar frames)
+                if (moved) {
+                    player.frameCounter++;
+                    if (player.frameCounter > 8) { // Cambiar cada 8 frames
+                        player.walkFrame = player.walkFrame === 1 ? 2 : 1;
+                        player.frameCounter = 0;
+                    }
+                } else {
+                    player.walkFrame = 1; // Frame estático cuando no se mueve
+                }
+
+                player.element.style.left = player.x + 'px';
+                player.element.style.top = player.y + 'px';
+                player.element.style.backgroundImage = `url('${player.direction}${player.walkFrame}.png')`;
+
+                updateCamera();
+                checkCartas();
+            }
+
+            // Woodstock sigue a Snoopy
+            if (woodstock.active) {
+                const dx = player.x - woodstock.x;
+                const dy = player.y - woodstock.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > 100) {
+                    woodstock.x += (dx / dist) * 4;
+                    woodstock.y += (dy / dist) * 4;
+                    woodstock.element.style.left = woodstock.x + 'px';
+                    woodstock.element.style.top = woodstock.y + 'px';
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // ========== CONTROLES ==========
+        function setupControls() {
+            const setup = (id, key) => {
+                const el = document.getElementById(id);
+                el.onmousedown = el.ontouchstart = (e) => {
+                    e.preventDefault();
+                    keys[key] = true;
+                };
+                el.onmouseup = el.onmouseleave = el.ontouchend = (e) => {
+                    e.preventDefault();
+                    keys[key] = false;
+                };
+            };
+
+            setup('upBtn', 'up');
+            setup('downBtn', 'down');
+            setup('leftBtn', 'left');
+            setup('rightBtn', 'right');
+            setup('aBtn', 'a');
+            setup('bBtn', 'b');
+
+            // Teclado
+            window.onkeydown = (e) => {
+                if (e.key === 'ArrowUp') keys.up = true;
+                if (e.key === 'ArrowDown') keys.down = true;
+                if (e.key === 'ArrowLeft') keys.left = true;
+                if (e.key === 'ArrowRight') keys.right = true;
+                if (e.key.toLowerCase() === 'a') keys.a = true;
+                if (e.key.toLowerCase() === 'b') {
+                    keys.b = true;
+                    handleBPress();
+                }
+            };
+
+            window.onkeyup = (e) => {
+                if (e.key === 'ArrowUp') keys.up = false;
+                if (e.key === 'ArrowDown') keys.down = false;
+                if (e.key === 'ArrowLeft') keys.left = false;
+                if (e.key === 'ArrowRight') keys.right = false;
+                if (e.key.toLowerCase() === 'a') keys.a = false;
+                if (e.key.toLowerCase() === 'b') keys.b = false;
+            };
+
+            // Botón B (cerrar modales)
+            document.getElementById('bBtn').onclick = handleBPress;
+
+            // Botones iniciales (Sí/No)
+            document.getElementById('btnSi').onclick = () => startGame();
+            document.getElementById('btnNo').onclick = () => startGame();
+
+            // Reset
+            document.getElementById('resetBtn').onclick = () => location.reload();
+        }
+
+        function handleBPress() {
+            if (game.modalAbierto) {
+                document.getElementById('modalCarta').classList.remove('active');
+                document.getElementById('modalGanaste').classList.remove('active');
+                game.modalAbierto = false;
+            }
+        }
+
+        function startGame() {
+            document.getElementById('modalInicial').classList.remove('active');
+            game.started = true;
+            game.modalAbierto = false;
+        }
+
+        // ========== INICIAR ==========
+        init();
+        update();
+    </script>
+</body>
+</html>
